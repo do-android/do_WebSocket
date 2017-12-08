@@ -2,6 +2,7 @@ package doext.implement;
 
 import java.net.URI;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.text.TextUtils;
@@ -132,15 +133,15 @@ public class do_WebSocket_Model extends do_WebSocket_MAbstract implements do_Web
 				return;
 			}
 			try {
-				if (_type.equalsIgnoreCase("HEX")) {//发送十六进制数
+				if (_type.equalsIgnoreCase("HEX")) {// 发送十六进制数
 					mSocket.send(WebSocketUtils.hexStr2Byte(_content));
-				} else if (_type.equalsIgnoreCase("File")) {//发送文件	
+				} else if (_type.equalsIgnoreCase("File")) {// 发送文件
 					String _realPath = DoIOHelper.getLocalFileFullPath(scriptEngine.getCurrentPage().getCurrentApp(), _content);
 					mSocket.send(DoIOHelper.readAllBytes(_realPath));
 				} else if (_type.equalsIgnoreCase("gbk")) {
-					mSocket.send(_content, "GBK");//发送字符串	
+					mSocket.send(_content, "GBK");// 发送字符串
 				} else {
-					mSocket.send(_content);//发送字符串	
+					mSocket.send(_content);// 发送字符串
 				}
 				callBack(true);
 			} catch (Exception e) {
@@ -168,7 +169,17 @@ public class do_WebSocket_Model extends do_WebSocket_MAbstract implements do_Web
 		}
 	}
 
-	/////////////////////////////////////////////////////////////////
+	public void fireErrorEvent(String msg) throws JSONException {
+		DoInvokeResult _invokeResult = new DoInvokeResult(getUniqueKey());
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("msg", msg);
+		_invokeResult.setResultNode(jsonObject);
+		if (getEventCenter() != null) {
+			getEventCenter().fireEvent("error", _invokeResult);
+		}
+	}
+
+	// ///////////////////////////////////////////////////////////////
 	@Override
 	public void onConnect() {
 		callBack(true);
@@ -192,6 +203,12 @@ public class do_WebSocket_Model extends do_WebSocket_MAbstract implements do_Web
 	@Override
 	public void onError(Exception error) {
 		callBack(false);
+		try {
+			fireErrorEvent(error.getMessage());
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
-	//////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////
 }
